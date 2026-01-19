@@ -1,0 +1,98 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model cuisines {
+  id                  BigInt                @id
+  cuisine_name        String?
+  restaurant_cuisines restaurant_cuisines[]
+}
+
+model meal_types {
+  id                    BigInt                  @id
+  meal_type             String?
+  restaurant_meal_types restaurant_meal_types[]
+}
+
+model restaurant_cuisines {
+  restaurant_id BigInt
+  cuisine_id    BigInt
+  cuisines      cuisines    @relation(fields: [cuisine_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  restaurants   restaurants @relation(fields: [restaurant_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([restaurant_id, cuisine_id])
+  @@index([cuisine_id], map: "idx_rc_cuisine_id")
+}
+
+model restaurant_meal_types {
+  restaurant_id BigInt
+  meal_type_id  BigInt
+  meal_types    meal_types  @relation(fields: [meal_type_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  restaurants   restaurants @relation(fields: [restaurant_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([restaurant_id, meal_type_id])
+  @@index([meal_type_id], map: "idx_rmt_meal_type_id")
+}
+
+model restaurants {
+  id                    BigInt                    @id
+  restaurant_name       String?
+  url                   String?
+  city                  String?
+  area                  String?
+  cost_for_two          Int?
+  rating                Decimal?                  @db.Decimal(2, 1)
+  page                  Int?
+  offer                 String?
+  percentage            String?
+  effective_discount    Float?
+  free                  Boolean?
+  latitude              Float?
+  longitude             Float?
+  geo                   Unsupported("geography")?
+  geo_status            String?                   @default("PENDING")
+  image_url             String?
+  restaurant_cuisines   restaurant_cuisines[]
+  restaurant_meal_types restaurant_meal_types[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model spatial_ref_sys {
+  srid      Int     @id
+  auth_name String? @db.VarChar(256)
+  auth_srid Int?
+  srtext    String? @db.VarChar(2048)
+  proj4text String? @db.VarChar(2048)
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model restaurants_backup {
+  id                 BigInt?
+  restaurant_name    String?
+  url                String?
+  city               String?
+  area               String?
+  cost_for_two       Int?
+  rating             Decimal?                  @db.Decimal(2, 1)
+  page               Int?
+  offer              String?
+  percentage         String?
+  effective_discount Float?
+  free               Boolean?
+  latitude           Float?
+  longitude          Float?
+  geo                Unsupported("geography")?
+  geo_status         String?
+
+  @@ignore
+}
+
+model cities {
+  id        BigInt  @id(map: "city_pkey")
+  city_name String?
+}
