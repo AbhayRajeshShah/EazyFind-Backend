@@ -5,3 +5,8 @@ export const safeJson = (obj) => {
     ),
   );
 };
+
+export const convertFloat = (num) => {
+  let d = parseFloat(num);
+  return isNaN(d) ? false : d;
+};
