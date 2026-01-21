@@ -3,6 +3,7 @@ import { buildBasicQueries } from "../filters/restaurants/basic.js";
 import { buildMealBasedQueries } from "../filters/restaurants/mealBased.js";
 import { buildMonetaryQueries } from "../filters/restaurants/monetary.js";
 import { safeJson } from "../utils/helper.js";
+import { OFFSET } from "../utils/constants.js";
 
 export const getRestaurantsByCity = async (req, res) => {
   try {
@@ -19,29 +20,57 @@ export const getRestaurantsByCity = async (req, res) => {
 };
 
 export const getRestaurants = async (req, res) => {
-  const restaurants = await prisma.restaurants.findMany({
-    take: 10,
-    where: {
+  try {
+    const { page } = req.query;
+    const skip = page && parseInt(page) > 1 ? (parseInt(page) - 1) * OFFSET : 0;
+
+    const whereClause = {
       AND: [
         ...buildBasicQueries(req.query),
         ...buildMonetaryQueries(req.query),
         ...buildMealBasedQueries(req.query),
       ],
-    },
-    include: {
-      restaurant_cuisines: {
-        include: {
-          cuisines: true,
+    };
+
+    let totalPageNumbers = await countTotalPages(whereClause);
+    if (page > totalPageNumbers) {
+      return res.status(200).json({ message: "No more restaurants found",restaurants:[] });
+    }
+
+    const restaurants = await prisma.restaurants.findMany({
+      take: OFFSET,
+      skip: skip,
+      where: whereClause,
+      orderBy: { effective_discount: "desc" },
+      include: {
+        restaurant_cuisines: {
+          include: {
+            cuisines: true,
+          },
+        },
+        restaurant_meal_types: {
+          include: {
+            meal_types: true,
+          },
         },
       },
-      restaurant_meal_types: {
-        include: {
-          meal_types: true,
-        },
-      },
-    },
+    });
+    return res.status(200).json({
+      restaurants: safeJson(formatRestaurants(restaurants)),
+      pages: totalPageNumbers,
+    });
+  } catch (e) {
+    return res
+      .status(400)
+      .json({ message: "Something went wrong", controller: "Restaurant" });
+  }
+};
+
+const countTotalPages = async (where) => {
+  const totalRestaurants = await prisma.restaurants.count({
+    where: where,
   });
-  return res.status(200).json(safeJson(formatRestaurants(restaurants)));
+  return Math.ceil(totalRestaurants / OFFSET);
 };
 
 const formatRestaurants = (restaurants) => {

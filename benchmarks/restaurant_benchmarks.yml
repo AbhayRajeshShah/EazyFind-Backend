@@ -1,0 +1,25 @@
+config:
+  target: "http://localhost:3003"
+  phases:
+    - duration: 60 # test duration in seconds
+      arrivalRate: 10 # new virtual users per second
+      name: "Warm up"
+
+  variables:
+    cuisine:
+      - 1
+      - 2
+      - 3
+      - 4
+    city:
+      - bengaluru
+      - mumbai
+      - delhi-ncr
+      - pune
+
+scenarios:
+  - name: "GET /restaurants with filters"
+    flow:
+      - get:
+          url: >
+            /restaurants?city={{ city }}
