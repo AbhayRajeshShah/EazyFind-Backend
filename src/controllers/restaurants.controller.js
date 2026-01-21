@@ -1,5 +1,6 @@
 import prisma from "../db.js";
 import { buildBasicQueries } from "../filters/restaurants/basic.js";
+import { buildMealBasedQueries } from "../filters/restaurants/mealBased.js";
 import { buildMonetaryQueries } from "../filters/restaurants/monetary.js";
 import { safeJson } from "../utils/helper.js";
 
@@ -24,24 +25,33 @@ export const getRestaurants = async (req, res) => {
       AND: [
         ...buildBasicQueries(req.query),
         ...buildMonetaryQueries(req.query),
+        ...buildMealBasedQueries(req.query),
       ],
     },
+    include: {
+      restaurant_cuisines: {
+        include: {
+          cuisines: true,
+        },
+      },
+      restaurant_meal_types: {
+        include: {
+          meal_types: true,
+        },
+      },
+    },
   });
-  return res.status(200).json(safeJson(restaurants));
+  return res.status(200).json(safeJson(formatRestaurants(restaurants)));
+};
 
-  // const restaurants = await prisma.restaurants.findMany({
-  //   where,
-  //   include: {
-  //     restaurant_cuisines: {
-  //       include: {
-  //         cuisines: true,
-  //       },
-  //     },
-  //     restaurant_meal_types: {
-  //       include: {
-  //         meal_types: true,
-  //       },
-  //     },
-  //   },
-  // });
+const formatRestaurants = (restaurants) => {
+  return restaurants.map((r) => {
+    const { restaurant_cuisines, restaurant_meal_types, ...restaurant } = r;
+
+    return {
+      ...restaurant,
+      cuisines: restaurant_cuisines.map((rc) => rc.cuisines),
+      meal_types: restaurant_meal_types.map((rm) => rm.meal_types),
+    };
+  });
 };
