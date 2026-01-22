@@ -14,3 +14,12 @@ export const convertFloat = (num) => {
 export const parseArray = (s) => {
   return s.split(",").map((e) => parseInt(e));
 };
+
+export const buildCacheKey = (base, query) => {
+  const sortedQuery = Object.keys(query)
+    .sort()
+    .map((k) => `${k}=${query[k]}`)
+    .join("&");
+
+  return `${base}?${sortedQuery}`;
+};

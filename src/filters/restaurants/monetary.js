@@ -1,4 +1,4 @@
-import { convertFloat } from "../../utils/helper.js";
+import { convertFloat } from "../../utils/helpers.js";
 export const buildMonetaryQueries = (req) => {
   const { minCost, maxCost, discount, free } = req;
   const filters = [];
@@ -22,6 +22,5 @@ export const buildMonetaryQueries = (req) => {
       free: true,
     });
   }
-  console.log(filters);
   return filters;
 };

@@ -2,25 +2,20 @@ import prisma from "../db.js";
 import { buildBasicQueries } from "../filters/restaurants/basic.js";
 import { buildMealBasedQueries } from "../filters/restaurants/mealBased.js";
 import { buildMonetaryQueries } from "../filters/restaurants/monetary.js";
-import { safeJson } from "../utils/helper.js";
+import { safeJson, buildCacheKey } from "../utils/helpers.js";
 import { OFFSET } from "../utils/constants.js";
-
-export const getRestaurantsByCity = async (req, res) => {
-  try {
-    const { city } = req.params;
-    const restaurants = await prisma.restaurants.findMany({
-      take: 10,
-      where: { city: city },
-      orderBy: { effective_discount: "desc" },
-    });
-    return res.status(200).json(safeJson(restaurants));
-  } catch (e) {
-    return res.status(400).json({ error: "Something went wrong" });
-  }
-};
+import redisClient from "../redis.js";
+import { cacheGet, cacheSet } from "../utils/cache.js";
 
 export const getRestaurants = async (req, res) => {
   try {
+    const cacheKey = buildCacheKey("restaurants", req.query);
+    const cachedData = await cacheGet(cacheKey);
+
+    if (cachedData) {
+      return res.status(200).json(cachedData);
+    }
+
     const { page } = req.query;
     const skip = page && parseInt(page) > 1 ? (parseInt(page) - 1) * OFFSET : 0;
 
@@ -34,7 +29,7 @@ export const getRestaurants = async (req, res) => {
 
     let totalPageNumbers = await countTotalPages(whereClause);
     if (page > totalPageNumbers) {
-      return res.status(200).json({ message: "No more restaurants found",restaurants:[] });
+      return res.status(200).json({ pages: totalPageNumbers, restaurants: [] });
     }
 
     const restaurants = await prisma.restaurants.findMany({
@@ -55,10 +50,15 @@ export const getRestaurants = async (req, res) => {
         },
       },
     });
-    return res.status(200).json({
+
+    let payload = {
       restaurants: safeJson(formatRestaurants(restaurants)),
       pages: totalPageNumbers,
-    });
+    };
+
+    await cacheSet(cacheKey, payload);
+
+    return res.status(200).json(payload);
   } catch (e) {
     return res
       .status(400)

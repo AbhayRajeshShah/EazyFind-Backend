@@ -1,4 +1,4 @@
-import { parseArray } from "../../utils/helper.js";
+import { parseArray } from "../../utils/helpers.js";
 
 export const buildMealBasedQueries = (req) => {
   let { mealtypeIds, cuisineIds } = req;
