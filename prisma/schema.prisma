@@ -11,12 +11,16 @@ model cuisines {
   id                  BigInt                @id
   cuisine_name        String?
   restaurant_cuisines restaurant_cuisines[]
+
+  @@index([cuisine_name(ops: raw("gin_trgm_ops"))], map: "idx_cuisines_name_trgm", type: Gin)
 }
 
 model meal_types {
   id                    BigInt                  @id
   meal_type             String?
   restaurant_meal_types restaurant_meal_types[]
+
+  @@index([meal_type(ops: raw("gin_trgm_ops"))], map: "idx_meal_types_name_trgm", type: Gin)
 }
 
 model restaurant_cuisines {
@@ -57,8 +61,14 @@ model restaurants {
   geo                   Unsupported("geography")?
   geo_status            String?                   @default("PENDING")
   image_url             String?
+  is_duplicate          Boolean?                  @default(false)
+  menu_items            menu_items[]
+  offers                offers[]
   restaurant_cuisines   restaurant_cuisines[]
   restaurant_meal_types restaurant_meal_types[]
+
+  @@index([area(ops: raw("gin_trgm_ops"))], map: "idx_restaurants_area_trgm", type: Gin)
+  @@index([restaurant_name(ops: raw("gin_trgm_ops"))], map: "idx_restaurants_name_trgm", type: Gin)
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
@@ -95,4 +105,29 @@ model restaurants_backup {
 model cities {
   id        BigInt  @id(map: "city_pkey")
   city_name String?
+}
+
+model menu_items {
+  id            Int          @id @default(autoincrement())
+  restaurant_id BigInt?
+  name          String
+  price         Int
+  category      String?
+  is_veg        Boolean?     @default(true)
+  image_url     String?
+  restaurants   restaurants? @relation(fields: [restaurant_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([restaurant_id], map: "idx_menu_items_restaurant_id")
+}
+
+model offers {
+  id                  Int          @id @default(autoincrement())
+  restaurant_id       BigInt?
+  description         String
+  code                String?
+  discount_percentage Int?
+  valid_until         DateTime?    @db.Timestamp(6)
+  restaurants         restaurants? @relation(fields: [restaurant_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([restaurant_id], map: "idx_offers_restaurant_id")
 }
