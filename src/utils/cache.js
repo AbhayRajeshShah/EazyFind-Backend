@@ -2,7 +2,9 @@ import redisClient from "../redis.js";
 
 export const cacheSet = async (key, payload, ttl = 7200) => {
   if (!key) return null;
-
+  if (!redisClient) {
+    return;
+  }
   try {
     await redisClient.SETEX(key, ttl, JSON.stringify(payload));
   } catch (e) {
@@ -12,6 +14,9 @@ export const cacheSet = async (key, payload, ttl = 7200) => {
 };
 
 export const cacheGet = async (key) => {
+  if (!redisClient) {
+    return null;
+  }
   try {
     if (!key) return null;
     let data = await redisClient.get(key);
