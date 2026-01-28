@@ -55,7 +55,7 @@ WHERE
     )
   )
 
-ORDER BY r.effective_discount DESC, distance_meters ASC
+ORDER BY r.effective_discount DESC, distance_meters ASC,r.id ASC
 LIMIT ${OFFSET}
 OFFSET ${offset};
 `;
