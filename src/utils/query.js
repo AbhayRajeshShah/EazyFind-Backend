@@ -2,6 +2,9 @@ import { OFFSET } from "./constants.js";
 import { Prisma } from "@prisma/client";
 
 export const getRawQuery = (parsed, offset) => {
+  if (!parsed.free) {
+    parsed.free = null;
+  }
   return Prisma.sql`
 SELECT
   r.id,
@@ -11,13 +14,9 @@ SELECT
   r.cost_for_two,
   r.rating,
   r.offer,
-  r.percentage,
   r.effective_discount,
-  r.free,
-  r.latitude,
-  r.longitude,
   r.image_url,
-
+  r.url,
   ST_Distance(
     r.geo,
     ST_MakePoint(${parsed.lon}, ${parsed.lat})::geography
@@ -25,6 +24,8 @@ SELECT
 
 FROM restaurants r
 
+WHERE id in (
+SELECT r.id FROM restaurants  r
 WHERE
   r.is_duplicate = false
   AND (${parsed.city}::text IS NULL OR r.city = ${parsed.city})
@@ -36,9 +37,30 @@ WHERE
   AND (${parsed.discount}::float IS NULL OR r.effective_discount >= ${parsed.discount})
   AND (${parsed.free}::boolean IS NULL OR r.free = ${parsed.free})
 
+  AND (
+    ${parsed.cuisineIds}::bigint[] IS NULL
+    OR EXISTS (
+      SELECT 1
+      FROM restaurant_cuisines rc
+      WHERE rc.restaurant_id = r.id
+        AND rc.cuisine_id = ANY(${parsed.cuisineIds})
+    )
+  )
 
-ORDER BY r.effective_discount DESC, distance_meters ASC
-LIMIT ${OFFSET}
-OFFSET ${offset};
+  AND (
+    ${parsed.mealtypeIds}::bigint[] IS NULL
+    OR EXISTS (
+      SELECT 1
+      FROM restaurant_meal_types rm
+      WHERE rm.restaurant_id = r.id
+        AND rm.meal_type_id = ANY(${parsed.mealtypeIds})
+    )
+  )
+  ORDER BY r.effective_discount DESC,r.id ASC
+  LIMIT ${OFFSET}
+  OFFSET ${offset}
+)
+ORDER BY r.effective_discount DESC, distance_meters ASC,r.id ASC
+;
 `;
 };
