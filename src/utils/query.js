@@ -24,8 +24,6 @@ SELECT
 
 FROM restaurants r
 
-WHERE id in (
-SELECT r.id FROM restaurants  r
 WHERE
   r.is_duplicate = false
   AND (${parsed.city}::text IS NULL OR r.city = ${parsed.city})
@@ -56,11 +54,9 @@ WHERE
         AND rm.meal_type_id = ANY(${parsed.mealtypeIds})
     )
   )
-  ORDER BY r.effective_discount DESC,r.id ASC
-  LIMIT ${OFFSET}
-  OFFSET ${offset}
-)
-ORDER BY r.effective_discount DESC, distance_meters ASC,r.id ASC
-;
+
+ORDER BY r.effective_discount DESC, distance_meters ASC
+LIMIT ${OFFSET}
+OFFSET ${offset};
 `;
 };
