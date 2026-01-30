@@ -60,3 +60,29 @@ LIMIT ${OFFSET}
 OFFSET ${offset};
 `;
 };
+
+export const getCityByLocationQuery = (city, location) => {
+  const { lat, lon } = location;
+  const delhiNCR = new Set(["delhi", "gurgaon", "noida", "gurugram"]);
+  const chandigarhCities = new Set(["chandigarh", "panchkula", "mohali"]);
+  if (delhiNCR.has(city.toLowerCase())) {
+    city = "delhi-ncr";
+  }
+  if (chandigarhCities.has(city.toLowerCase())) {
+    city = "chandigarh-tricity";
+  }
+  return Prisma.sql`
+    SELECT city_name
+    FROM cities
+    ORDER BY
+      CASE
+        WHEN city_name = ${city} THEN 0
+        ELSE 1
+      END,
+      geo <-> ST_SetSRID(
+      ST_MakePoint(${lon}::double precision, ${lat}::double precision),
+      4326
+      )
+    LIMIT 1;
+  `;
+};

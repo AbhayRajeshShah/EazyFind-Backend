@@ -103,8 +103,12 @@ model restaurants_backup {
 }
 
 model cities {
-  id        BigInt  @id(map: "city_pkey")
-  city_name String?
+  id         BigInt                    @id(map: "city_pkey")
+  city_name  String?
+  latitude   Float?
+  longitude  Float?
+  geo        Unsupported("geography")?
+  geo_status String?                   @default("PENDING")
 }
 
 model menu_items {
