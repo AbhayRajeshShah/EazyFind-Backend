@@ -40,9 +40,6 @@ export const getCityByUserLocation = async (req, res) => {
     const geoData = await response.json();
 
     const cityName = geoData.results?.[0]?.city;
-    if (!cityName) {
-      return res.json({ city: "delhi-ncr" });
-    }
 
     const closestCity = await prisma.$queryRaw(
       getCityByLocationQuery(cityName, { lat, lon }),

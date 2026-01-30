@@ -65,12 +65,15 @@ export const getCityByLocationQuery = (city, location) => {
   const { lat, lon } = location;
   const delhiNCR = new Set(["delhi", "gurgaon", "noida", "gurugram"]);
   const chandigarhCities = new Set(["chandigarh", "panchkula", "mohali"]);
-  if (delhiNCR.has(city.toLowerCase())) {
-    city = "delhi-ncr";
+  if (city) {
+    if (delhiNCR.has(city.toLowerCase())) {
+      city = "delhi-ncr";
+    }
+    if (chandigarhCities.has(city.toLowerCase())) {
+      city = "chandigarh-tricity";
+    }
   }
-  if (chandigarhCities.has(city.toLowerCase())) {
-    city = "chandigarh-tricity";
-  }
+
   return Prisma.sql`
     SELECT city_name
     FROM cities
