@@ -10,5 +10,9 @@
     "artillery": "^2.0.27",
     "prisma": "^5.4.0"
   },
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "artillery run ./benchmarks/restaurant_benchmarks.yml"
+  },
   "type": "module"
 }

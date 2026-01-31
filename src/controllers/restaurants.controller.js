@@ -13,16 +13,19 @@ import { cacheGet, cacheSet } from "../utils/cache.js";
 
 export const getRestaurants = async (req, res) => {
   try {
+    // Verify cache
     const cacheKey = buildCacheKey("restaurants", req.query);
     const cachedData = await cacheGet(cacheKey);
 
     if (cachedData) {
       return res.status(200).json(cachedData);
     }
-    console.log(req.query);
+
+    // Pagination calculation
     const { page } = req.query;
     const skip = page && parseInt(page) > 1 ? (parseInt(page) - 1) * OFFSET : 0;
 
+    // build where clause
     const whereClause = {
       AND: [
         ...buildBasicQueries(req.query),
@@ -31,15 +34,19 @@ export const getRestaurants = async (req, res) => {
         { is_duplicate: false },
       ],
     };
-    const parsed = getParsedQueryObject(req);
 
     let totalPageNumbers = await countTotalPages(whereClause);
     if (page > totalPageNumbers) {
       return res.status(200).json({ pages: totalPageNumbers, restaurants: [] });
     }
 
+    // get all params parsed
+    const parsed = getParsedQueryObject(req);
+
+    // query restaurants
     const restaurants = await prisma.$queryRaw(getRawQuery(parsed, skip));
 
+    // return payload and set cache
     let payload = {
       restaurants: safeJson(restaurants),
       pages: totalPageNumbers,

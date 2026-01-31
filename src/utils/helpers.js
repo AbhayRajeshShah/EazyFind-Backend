@@ -24,6 +24,7 @@ export const buildCacheKey = (base, query) => {
   return `${base}?${sortedQuery}`;
 };
 
+// parse req param body into fields
 export const getParsedQueryObject = (req) => {
   const {
     city,

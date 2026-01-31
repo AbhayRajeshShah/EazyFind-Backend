@@ -29,6 +29,7 @@ export const getCityByUserLocation = async (req, res) => {
   }
 
   try {
+    // 3rd party API to reverse geoencode lat and lon to get city
     const response = await fetch(
       `https://api.geoapify.com/v1/geocode/reverse?lat=${lat}&lon=${lon}&format=json&apiKey=${process.env.GEOAPIFY_API_KEY}`,
     );

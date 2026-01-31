@@ -6,6 +6,8 @@ export const getRawQuery = (parsed, offset) => {
     parsed.free = null;
   }
   return Prisma.sql`
+
+-- Select Fields
 SELECT
   r.id,
   r.restaurant_name,
@@ -24,6 +26,7 @@ SELECT
 
 FROM restaurants r
 
+-- Building where clause
 WHERE
   r.is_duplicate = false
   AND (${parsed.city}::text IS NULL OR r.city = ${parsed.city})
@@ -35,6 +38,9 @@ WHERE
   AND (${parsed.discount}::float IS NULL OR r.effective_discount >= ${parsed.discount})
   AND (${parsed.free}::boolean IS NULL OR r.free = ${parsed.free})
 
+-- Efficient checks without joins
+
+-- For cuisines
   AND (
     ${parsed.cuisineIds}::bigint[] IS NULL
     OR EXISTS (
@@ -45,6 +51,7 @@ WHERE
     )
   )
 
+-- For meal types  
   AND (
     ${parsed.mealtypeIds}::bigint[] IS NULL
     OR EXISTS (
@@ -55,7 +62,10 @@ WHERE
     )
   )
 
+-- Maximize discount, minimize discount, order by id for consistent pagination
 ORDER BY r.effective_discount DESC, distance_meters ASC,r.id ASC
+
+-- Pagination by offset
 LIMIT ${OFFSET}
 OFFSET ${offset};
 `;
@@ -63,8 +73,12 @@ OFFSET ${offset};
 
 export const getCityByLocationQuery = (city, location) => {
   const { lat, lon } = location;
+
+  // Subset of cities that come under the same city as per DB
   const delhiNCR = new Set(["delhi", "gurgaon", "noida", "gurugram"]);
   const chandigarhCities = new Set(["chandigarh", "panchkula", "mohali"]);
+
+  // map city to subset
   if (city) {
     if (delhiNCR.has(city.toLowerCase())) {
       city = "delhi-ncr";
@@ -77,15 +91,18 @@ export const getCityByLocationQuery = (city, location) => {
   return Prisma.sql`
     SELECT city_name
     FROM cities
+    -- If city_name matches it is ordered highest and returns 
     ORDER BY
       CASE
         WHEN city_name = ${city} THEN 0
         ELSE 1
       END,
+      -- If name does not match to cities in DB, we find closest city by lat and lon
       geo <-> ST_SetSRID(
       ST_MakePoint(${lon}::double precision, ${lat}::double precision),
       4326
       )
+    -- we need only 1 city  
     LIMIT 1;
   `;
 };
