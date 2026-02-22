@@ -2,6 +2,8 @@
 
 <i>This repo is scoped to the <b>backend</b> of EAZYFIND.</i>
 
+Frontend Implementation of this project can be found [here](https://github.com/AbhayRajeshShah/EazyFind-Frontend).
+
 Eazyfind is a restaurant finder application built with Next.js and TypeScript. It allows users to search for restaurants, apply various filters, and view restaurant details.
 
 ## Technologies Used
